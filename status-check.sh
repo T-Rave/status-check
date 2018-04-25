@@ -5,14 +5,16 @@
 while read LINE; do
   STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$LINE")
   LOCATION=$(curl -L -s -o /dev/null -w '%{url_effective}' "$LINE")
+  DOMAIN=$(echo $LINE | awk -F/ '{print $3}')
   SSL=$(curl -s -o /dev/null -w '%{ssl_verify_result}' "$LINE")
   INSECURE=$(curl -s -o /dev/null --insecure -w '%{http_code}' "$LINE")
+  IP=$(ping $DOMAIN -c1 | head -1 | grep -Eo '[0-9.]{4,}')
   if [ $STATUS -eq 200 ]; then
-    echo "200 - $LINE"
+    echo "200 - $LINE $IP"
   elif [[ $STATUS =~ ^30[0-9] ]]; then
-    echo "$STATUS - $LINE ==> $LOCATION"
+    echo "$STATUS - $LINE ==> $LOCATION $IP"
   elif [ $SSL = 1 ]; then
-    echo "SSL issue - $INSECURE non-secure - $LINE"
+    echo "SSL issue - $INSECURE non-secure - $LINE $IP"
   else
   	echo "$STATUS $LINE"
   fi
